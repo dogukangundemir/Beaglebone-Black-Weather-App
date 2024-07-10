@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ankara Weather and BeagleBone Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .button-container {
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .chart-container {
+            width: 90%;
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ankara Weather and BeagleBone Data</h1>
+    <div class="container">
+        <div class="button-container">
+            <button onclick="showWeatherData()">Weather Data</button>
+            <button onclick="showTemperatureData()">BeagleBone Temperature Data</button>
+        </div>
+        <div class="chart-container">
+            <h2 id="chartTitle">Weather Data</h2>
+            <canvas id="dataChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let weatherData;
+        let temperatureData;
+        const ctx = document.getElementById('dataChart').getContext('2d');
+        let dataChart;
+
+        //weather data from api
+        fetch('/api/weather')
+            .then(response => response.json())
+            .then(data => {
+                weatherData = {
+                    labels: data.date.map(date => new Date(date).toLocaleString()),
+                    datasets: [
+                        {
+                            label: 'Temperature (2m) (°C)',
+                            data: data.temperature_2m,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Humidity (2m) (%)',
+                            data: data.relative_humidity_2m,
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Rain (mm)',
+                            data: data.rain,
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                };
+                renderChart(weatherData, 'Weather Data');
+            });
+
+        //BeagleBone temperature data
+        fetch('/api/temperature')
+            .then(response => response.json())
+            .then(data => {
+                temperatureData = {
+                    labels: data.map(entry => entry.Timestamp),
+                    datasets: [{
+                        label: 'Temperature (°C)',
+                        data: data.map(entry => entry.Temperature),
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 1
+                    }]
+                };
+            });
+
+        function renderChart(data, title) {
+            if (dataChart) {
+                dataChart.destroy();
+            }
+            document.getElementById('chartTitle').innerText = title;
+            dataChart = new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function showWeatherData() {
+            renderChart(weatherData, 'Weather Data');
+        }
+
+        function showTemperatureData() {
+            renderChart(temperatureData, 'BeagleBone Temperature Data');
+        }
+    </script>
+</body>
+</html>
