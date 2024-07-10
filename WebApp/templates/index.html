@@ -46,7 +46,8 @@
     <div class="container">
         <div class="button-container">
             <button onclick="showWeatherData()">Weather Data</button>
-            <button onclick="showTemperatureData()">BeagleBone Temperature Data</button>
+            <button onclick="showTemperatureData()">BeagleBone Temperature and Humidity Data</button>
+            <button onclick="showAirQualityData()">Air Quality Data</button>
         </div>
         <div class="chart-container">
             <h2 id="chartTitle">Weather Data</h2>
@@ -57,10 +58,11 @@
     <script>
         let weatherData;
         let temperatureData;
+        let airQualityData;
         const ctx = document.getElementById('dataChart').getContext('2d');
         let dataChart;
 
-        //weather data from api
+    
         fetch('/api/weather')
             .then(response => response.json())
             .then(data => {
@@ -90,21 +92,47 @@
                 renderChart(weatherData, 'Weather Data');
             });
 
-        //BeagleBone temperature data
+       
         fetch('/api/temperature')
             .then(response => response.json())
             .then(data => {
                 temperatureData = {
                     labels: data.map(entry => entry.Timestamp),
-                    datasets: [{
-                        label: 'Temperature (°C)',
-                        data: data.map(entry => entry.Temperature),
-                        borderColor: 'rgba(153, 102, 255, 1)',
-                        borderWidth: 1
-                    }]
+                    datasets: [
+                        {
+                            label: 'Temperature (°C)',
+                            data: data.map(entry => entry.Temperature),
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Humidity (%)',
+                            data: data.map(entry => entry.Humidity),
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }
+                    ]
                 };
             });
 
+        
+        fetch('/api/air_quality')
+            .then(response => response.json())
+            .then(data => {
+                airQualityData = {
+                    labels: Object.keys(data).filter(key => key !== 'mask_needed'),
+                    datasets: [
+                        {
+                            label: 'Air Quality',
+                            data: Object.values(data).filter(value => typeof value === 'number'),
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                };
+            });
+
+   
         function renderChart(data, title) {
             if (dataChart) {
                 dataChart.destroy();
@@ -123,12 +151,19 @@
             });
         }
 
+        
         function showWeatherData() {
             renderChart(weatherData, 'Weather Data');
         }
 
+       
         function showTemperatureData() {
-            renderChart(temperatureData, 'BeagleBone Temperature Data');
+            renderChart(temperatureData, 'BeagleBone Temperature and Humidity Data');
+        }
+
+        
+        function showAirQualityData() {
+            renderChart(airQualityData, 'Air Quality Data');
         }
     </script>
 </body>
